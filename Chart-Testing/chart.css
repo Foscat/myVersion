@@ -5,3 +5,8 @@ select {
     display: inline;
     color: black;
 }
+#container {
+    width: 80%;
+    height: 500px;
+    margin: 0 auto;
+}
