@@ -46,6 +46,7 @@ function stockPriceProcessing(symbol, Cname) {
         method: "GET",
     }).then(function (response) {
         console.log(response);
+        console.log(response["Global Quote"]["02. open"]);
         $("#stockData").empty();
         $("#stockData").append("<li><p>" + Cname + "</p></li>");
         $("#stockData").append("<li><p> Open Price: $" + response["Global Quote"]["02. open"] + "</p></li>");
@@ -60,61 +61,45 @@ function stockPriceProcessing(symbol, Cname) {
 
         //percentChange = parseFloat(response["Global Quote"]["10. change percent"]);
         //percentCheck(percentChange);
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        /////daily stock info history
+       var apiUrl3 =  "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED"
+
+       var queryURL4 = apiUrl3 + "&symbol=" + companySymbol + "&apikey=" + apiKey;
+
+       $.ajax({
+           url: queryURL4,
+           method: "GET",
+       }).then(function (responseDaily) {
+
+        console.log(responseDaily);
+        console.log(responseDaily["Time Series (Daily)"]);
+           
+        
+        var graphfiller = responseDaily["Time Series (Daily)"];
+        console.log(graphfiller);
+        console.log(graphfiller["2018-05-17"]);
+        console.log(graphfiller["2018-05-17"]["1. open"]);
+        console.log(graphfiller["2018-05-17"]["2. high"]);
+        console.log(graphfiller["2018-05-17"]["3. low"]);
+        console.log(graphfiller["2018-05-17"]["4. close"]);
+        // ///////////////////////////////////////////////////
 
 
-        (function(){
-            function ac_add_to_head(el){
-                var head = document.getElementsByTagName('head')[0];
-                head.insertBefore(el,head.firstChild);
-            }
-            function ac_add_link(url){
-                var el = document.createElement('link');
-                el.rel='stylesheet';el.type='text/css';el.media='all';el.href=url;
-                ac_add_to_head(el);
-            }
-            function ac_add_style(css){
-                var ac_style = document.createElement('style');
-                if (ac_style.styleSheet) ac_style.styleSheet.cssText = css;
-                else ac_style.appendChild(document.createTextNode(css));
-                ac_add_to_head(ac_style);
-            }
-            ///////////////
-            console.log("here");
-            //////////////////////
-            ac_add_style(document.getElementById("ac_style_samples-stock-candlestick-01").innerHTML);
-            ac_add_style(".anychart-embed-samples-stock-candlestick-01{width:600px;height:450px;}");
-            })();
+        // console.log({graphfiller});
+
+        var graphInfo = {graphfiller};
+
+        console.log(graphInfo);
         
-        
-            //// data for anychart
         
             anychart.onDocumentReady(function () {
                 
                 // set the data
-                table = anychart.data.table();
-                table.addData([
-                    ['2004-01-12', 91.21, 92.14, 91.21, 91.55],
-        ['2001-01-13', 91.45, 91.51, 89.01, 89.70],
-        ['2001-04-14', 89.90, 90.46, 89.75, 90.31],
-        ['2001-08-15', 95.07, 95.65, 93.55, 94.02],
-        ['2002-01-16', 95.00, 95.35, 94.71, 95.32],
-        ['2002-04-20', 96.00, 97.44, 95.73, 97.10],
-        ['2002-08-21', 97.23, 98.04, 96.64, 97.70],
-        ['2003-01-22', 97.84, 98.16, 97.32, 97.51],
-        ['2003-04-23', 97.82, 98.21, 97.10, 97.90],
-        ['2003-08-26', 97.90, 99.85, 97.56, 99.85],
-        ['2004-01-27', 99.40, 99.67, 98.70, 98.80],
-        ['2004-08-28', 99.15, 99.42, 97.28, 97.38]
-                ]);
-              
-                // map the data
-                // mapping = table.mapAs();
-                // mapping.addField(response["Global Quote"]["02. open"]);
-                // mapping.addField(response["Global Quote"]["03. high"]);
-                // mapping.addField(response["Global Quote"]["04. low"]);
-                // mapping.addField(response["Global Quote"]["05. price"]);
-            
-                // map the data
+                 table = anychart.data.table();
+                table.addData(graphInfo);
+
+                //map the data
                 mapping = table.mapAs();
                 mapping.addField('open', 1);
                 mapping.addField('high', 2);
@@ -134,62 +119,14 @@ function stockPriceProcessing(symbol, Cname) {
             
                 chart.draw();
             });
+       })
+    
+
 
     });
     
 };
 
-////////anychart js
-
-// (function(){
-//     function ac_add_to_head(el){
-//         var head = document.getElementsByTagName('head')[0];
-//         head.insertBefore(el,head.firstChild);
-//     }
-//     function ac_add_link(url){
-//         var el = document.createElement('link');
-//         el.rel='stylesheet';el.type='text/css';el.media='all';el.href=url;
-//         ac_add_to_head(el);
-//     }
-//     function ac_add_style(css){
-//         var ac_style = document.createElement('style');
-//         if (ac_style.styleSheet) ac_style.styleSheet.cssText = css;
-//         else ac_style.appendChild(document.createTextNode(css));
-//         ac_add_to_head(ac_style);
-//     }
-//     console.log("here");
-//     ac_add_style(document.getElementById("ac_style_samples-stock-candlestick-01").innerHTML);
-//     ac_add_style(".anychart-embed-samples-stock-candlestick-01{width:600px;height:450px;}");
-//     })();
 
 
-//     //// data for anychart
-
-//     anychart.onDocumentReady(function () {
-        
-//         // set the data
-//         table = anychart.data.table();
-//         table.addData([
-    
-//         ]);
-      
-//         // map the data
-//         mapping = table.mapAs();
-//         mapping.addField('open', 1);
-//         mapping.addField('high', 2);
-//         mapping.addField('low', 3);
-//         mapping.addField('close', 4);
-    
-//         // chart type
-//         var chart = anychart.stock();
-    
-//         console.log("here2");
-//         // set the series
-//         var series = chart.plot(0).candlestick(mapping);
-//         series.name("ACME Corp. stock prices");
-    
-//         chart.title('Stock Candlestick Demo: ACME Corp. Stock prices \n(Array data notation)');
-//         chart.container('container');
-    
-//         chart.draw();
-//     });
+//

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<p>Looping through arrays inside arrays.</p>
+
+<p id="demo"></p>
+
+<script>
+var myObj, i, j, x = "";
+myObj = {
+  "car1": {"date1":"1","date2":"2","date3":"3","date4":"4",},
+  "car2": {"date1":"1","date2":"2","date3":"3","date4":"4",},
+  "car3": {"date1":"1","date2":"2","date3":"3","date4":"4",}}
+  var cars = myObj;
+console.log(myObj);  
+console.log(myObj.car1);
+
+for (i in myObj) {
+    x += "<h2>" + myObj.cars[i].date1 + "</h2>";
+    for (j in myObj.cars[i].models) {
+        x += myObj.cars[i].models[j] + "<br>";
+    }
+}
+
+document.getElementById("demo").innerHTML = x;
+</script>
+
+</body>
+</html>
