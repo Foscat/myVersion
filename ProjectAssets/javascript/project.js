@@ -13,11 +13,17 @@ firebase.initializeApp(config);
 
 var database = firebase.database();
 
-// const form = document.querySelector("form");
+// Make Dropdown list of Memes
 
-// form.addEventListener("submit", postComment);
+$.getJSON("meme-images.json", function (json2) {
+    // console.log(json2);
+    for (var i = 0; i < json2.length; i++) {
+        memeName = json2[i];
+        $("#memeImageName").append("<option value='" + memeName + "'>" + memeName + "</option>");
+    }
+});
 
-$(document).on("click", "#commentSub", postComment);
+// User Meme Comment Post
 
 const timeStamp = () => {
     let options = {
@@ -31,33 +37,67 @@ const timeStamp = () => {
     return now;
 };
 
-function postComment(e) {
-    e.preventDefault();
-    let name = document.getElementById("name").value;
-    let comment = document.getElementById("comment").value;
+var mName = "";
+var name = "";
+var topTxt = "";
+var bottomTxt = "";
+var memeId = "";
 
-    if (name && comment) {
+$("#memeImageName").change(function () {
+    mName = $(this).children(":selected").attr("value");
+});
+
+$(document).on("click", "#commentSub", function (e) {
+    e.preventDefault();
+    name = $("#name").val().trim();
+    topTxt = $("#topText").val();
+    bottomTxt = $("#bottomText").val();
+    // console.log(mName);
+    // console.log(name);
+    // console.log(topTxt)
+
+    if (name && topTxt && bottomTxt && mName) {
         database.ref().push({
             name: name,
-            comment: comment,
+            mName: mName,
+            topTxt: topTxt,
+            bottomTxt: bottomTxt,
             time: timeStamp()
         });
     }
+    $("#name").val("");
+    $("#topText").val("");
+    $("#bottomText").val("");
+    $("#memeImageName").val($("#memeImageName").data("default-value"));
 
-    document.getElementById("name").value = '';
-    document.getElementById("comment").value = '';
-};
-
-database.ref().on("child_added", function (snapshot) {
-    let comment = snapshot.val();
-    addComment(comment.name, comment.comment, comment.time);
+    mName = "";
+    name = "";
+    topTxt = "";
+    bottomTxt = "";
 });
 
-const addComment = (name, comment, timeStamp) => {
-    let comments = document.getElementById("comments");
-    comments.innerHTML = `<hr><h5>${name} says<span id="timeSpan">${timeStamp}</span></h5><p>${comment}</p>${comments.innerHTML}`;
+database.ref().on("child_added", function (childSnapshot) {
+    let comment = childSnapshot.val();
+    memeId = childSnapshot.key;
+    addComment(comment.name, comment.mName, comment.topTxt, comment.bottomTxt, comment.time, memeId);
+    // console.log(memeId);
+});
+
+const addComment = (name, mName, topTxt, bottomTxt, timeStamp, memeId) => {
+    // console.log(memeId);
+    $("#uMeme").prepend("<div id='" + memeId + "'><hr><h5><b>" + name + " says on <span id='timeSpan'>" + timeStamp
+        + "                    </b><i class='material-icons delete' data-train='" + memeId +
+        "' style='font-size:30px; color: red'>close</i></span></h5><img src='http://apimeme.com/meme?meme="
+        + mName + "&top=" + topTxt + "&bottom=" + bottomTxt + "&test=1'</img></div>");
 }
 
+// Delete Meme Comments
+
+$(document).on('click', '.delete', function () {
+    var memeKey = $(this).attr('data-train');
+    database.ref(memeKey).remove();
+    $("#" + memeKey).remove();
+});
 
 // Make list of Companies
 
@@ -83,9 +123,13 @@ $("#companyName").change(function () {
     console.log($(this).children(":selected").attr("value"));
 });
 
+// console.log(symbol);
+
 $(document).on("click", "#submit", function (e) {
     e.preventDefault();
     stockPriceProcessing(symbol, Cname);
+    timeSeries(symbol, Cname);
+    console.log("submit")
 });
 
 var percentChange = 0;
@@ -106,15 +150,15 @@ function stockPriceProcessing(symbol, Cname) {
     }).then(function (response) {
         console.log(response);
         $("#stockData").empty();
-        $("#stockData").append("<li><p>" + Cname + "</p></li>");
-        $("#stockData").append("<li><p> Open Price: $" + response["Global Quote"]["02. open"] + "</p></li>");
-        $("#stockData").append("<li><p> High Price: $" + response["Global Quote"]["03. high"] + "</p></li>");
-        $("#stockData").append("<li><p> Low Price: $" + response["Global Quote"]["04. low"] + "</p></li>");
-        $("#stockData").append("<li><p> Current Price: $" + response["Global Quote"]["05. price"] + "</p></li>");
-        $("#stockData").append("<li><p> Latest Trading Day: " + response["Global Quote"]["07. latest trading day"] + "</p></li>");
-        $("#stockData").append("<li><p> Previous Close: $" + response["Global Quote"]["08. previous close"] + "</p></li>");
-        $("#stockData").append("<li><p> Change: " + response["Global Quote"]["09. change"] + "</p></li>");
-        $("#stockData").append("<li><p> Change Percent: " + response["Global Quote"]["10. change percent"] + "</p></li>");
+        $("#stockData").append("<li><b>" + Cname + "</b></li><br>");
+        $("#stockData").append("<li><b>Open Price:</b> $" + response["Global Quote"]["02. open"] + "</li>");
+        $("#stockData").append("<li><b>High Price:</b> $" + response["Global Quote"]["03. high"] + "</li>");
+        $("#stockData").append("<li><b>Low Price:</b> $" + response["Global Quote"]["04. low"] + "</li>");
+        $("#stockData").append("<li><b>Current Price:</b> $" + response["Global Quote"]["05. price"] + "</li>");
+        $("#stockData").append("<li><b>Latest Trading Day:</b> " + response["Global Quote"]["07. latest trading day"] + "</li>");
+        $("#stockData").append("<li><b>Previous Close:</b> $" + response["Global Quote"]["08. previous close"] + "</li>");
+        $("#stockData").append("<li><b>Change:</b> " + response["Global Quote"]["09. change"] + "</li>");
+        $("#stockData").append("<li><b>Change Percent:</b> " + response["Global Quote"]["10. change percent"] + "</li>");
 
         percentChange = parseFloat(response["Global Quote"]["10. change percent"]);
         percentCheck(percentChange);
@@ -122,21 +166,124 @@ function stockPriceProcessing(symbol, Cname) {
     });
 };
 
-// Meme Api call for Meme image
+
+function timeSeries(symbol, Cname) {
+
+    var apiKey = "WW3QMLRBLCZIJBV2";
+
+    var companySymbol = symbol;
+
+    var apiUrl2 = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY"
+
+    var queryURL3 = apiUrl2 + "&symbol=" + companySymbol + "&apikey=" + apiKey;
+
+    $.ajax({
+        url: queryURL3,
+        method: "GET",
+    }).then(function (response) {
+
+        $("#container").empty();
+
+        //Tranforming Object into Array and then locating them with Index number
+
+        var myObj = response["Time Series (Daily)"];
+        var key = Object.keys(myObj)[0];
+
+        console.log(key);
+        console.log(myObj[key]);
+
+        // Dynamically calling last 30 days open, high, low and close price and putting them into an array
+
+        var keys;
+        var timeSeriesData = [];
+
+        for (var i = 0; i < 30; i++) {
+            keys = Object.keys(myObj)[i]
+            timeSeriesData.push([keys, parseFloat(myObj[keys]["1. open"]), parseFloat(myObj[keys]["2. high"]), parseFloat(myObj[keys]["3. low"]), parseFloat(myObj[keys]["4. close"])])
+        };
+
+        console.log(timeSeriesData);
+
+
+        (function () {
+            function ac_add_to_head(el) {
+                var head = document.getElementsByTagName('head')[0];
+                head.insertBefore(el, head.firstChild);
+            }
+            function ac_add_link(url) {
+                var el = document.createElement('link');
+                el.rel = 'stylesheet'; el.type = 'text/css'; el.media = 'all'; el.href = url;
+                ac_add_to_head(el);
+            }
+            function ac_add_style(css) {
+                var ac_style = document.createElement('style');
+                if (ac_style.styleSheet) ac_style.styleSheet.cssText = css;
+                else ac_style.appendChild(document.createTextNode(css));
+                ac_add_to_head(ac_style);
+            }
+            ///////////////
+            console.log("here");
+            //////////////////////
+            ac_add_style(document.getElementById("ac_style_samples-stock-candlestick-01").innerHTML);
+            ac_add_style(".anychart-embed-samples-stock-candlestick-01{width:600px;height:450px;}");
+        })();
+
+
+        //// data for anychart
+
+        anychart.onDocumentReady(function () {
+
+            // set the data
+            table = anychart.data.table();
+
+            table.addData(timeSeriesData);
+
+            // table.addData([
+            //     // this is just filler data to how the chart works
+            //     ['2004-01-12', 91.21, 92.14, 91.21, 91.55],
+            //     ['2001-01-13', 91.45, 91.51, 89.01, 89.70],
+          
+            // map the data
+            mapping = table.mapAs();
+            mapping.addField('open', 1);
+            mapping.addField('high', 2);
+            mapping.addField('low', 3);
+            mapping.addField('close', 4);
+
+            var chart = anychart.stock();
+            /////////////////////////
+            // console.log(mapping);
+            /////////////////
+            // set the series
+            var series = chart.plot(0).candlestick(mapping);
+            series.name(Cname);
+
+            chart.title(companySymbol);
+            chart.container('container');
+
+            chart.draw();
+        });
+
+    });
+
+};
+
+// Meme Api call for Stock Meme image
 
 function percentCheck(percentChange) {
+    
     var goodMeme =
     {
-        goodImg: ["Corona", "Buddy-Christ", "Cool-Obama", "Metal-Jesus"],
-        topT: ["Your investing"],
-        bottomT: ["in the right shit"]
+        goodImg: ["Cool-Obama", "Buddy-Christ", "Chuck-Norris-Approves", "Metal-Jesus", "Gangnam-Style-PSY","Fast-Furious-Johnny-Tran","Ghetto-Jesus"],
+        topT: ["Your Investing", "Right On", "Because", "You", "OPA","Money is","Draaank"],
+        bottomT: ["In the Right Shit", "Buddy", "He bought it too", "rock!", "Gangnam style","own my mind","Is on Me!"]
     };
 
     var badMeme =
     {
-        badImg: ["Booty-Warrior", "Burn-Kitty", "Not-Bad", "Not-Okay-Rage-Face"],
-        topT: ["Your investing"],
-        bottomT: ["in the wrong shit"],
+        badImg: ["Booty-Warrior", "Burn-Kitty", "Bitch-Please", "Angry-Baby", "Aaaaand-Its-Gone","Criana","Dave-Chappelle","III-Have-You-Know-Spongebob"],
+        topT: ["Cant you read", "Burn", "your money", "Get your", "Aaaaand","We not making","Can I Have","I Mean"],
+        bottomT: ["before you invest", " ", "is screwed", "Shit together", "Its-Gone","No Money!","A Dollar","Its Whatever"],
     };
 
     var apiUrl = "https://ronreiter-meme-generator.p.mashape.com/meme";
@@ -145,15 +292,20 @@ function percentCheck(percentChange) {
     var topText;
     var bottomText;
     var meme;
+    var i = 0;
 
     if (percentChange < 0) {
-        meme = badMeme.badImg[1];
-        topText = badMeme.topT[0];
-        bottomText = badMeme.bottomT[0];
+        i = Math.floor(Math.random() * badMeme.badImg.length);
+        console.log(i);
+        meme = badMeme.badImg[i];
+        topText = badMeme.topT[i];
+        bottomText = badMeme.bottomT[i];
     } else {
-        meme = goodMeme.goodImg[2];
-        topText = goodMeme.topT[0];
-        bottomText = goodMeme.bottomT[0];
+        i = Math.floor(Math.random() * goodMeme.goodImg.length);
+        console.log(i);
+        meme = goodMeme.goodImg[i];
+        topText = goodMeme.topT[i];
+        bottomText = goodMeme.bottomT[i];
     }
 
     var queryURL = apiUrl + "?bottom=" + bottomText + "&font=" + font + "&font_size=" + fontSize + "&meme=" + meme + "&top=" + topText;
@@ -166,10 +318,20 @@ function percentCheck(percentChange) {
             "Accept": "text/plain"
         },
     }).then(function (response) {
-        $("#meme").html("<img src = 'http://apimeme.com/meme?meme=" + meme + "&top=" + topText + "&bottom=" + bottomText + "&test=2'>")
-        
+        // console.log(response);
+        $("#cMeme").html("<img src = 'http://apimeme.com/meme?meme=" + meme + "&top=" + topText + "&bottom=" + bottomText + "&test=1'>")
+
     });
 };
+
+
+
+
+
+
+
+
+
 
 
 
